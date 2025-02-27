@@ -15,6 +15,7 @@ class VideoProcessor:
         self.final_output = os.path.join(self.output_dir, "final.mp4")
 
         os.makedirs(self.output_dir, exist_ok=True)
+        os.makedirs(self.output_dir_transition, exist_ok=True)
 
         with open(self.config_file, "r") as f:
             self.video_configs = json.load(f)
@@ -23,8 +24,8 @@ class VideoProcessor:
         """Applies resolution normalization and subtitles in a single step."""
         # Base video filters: Normalize resolution and frame rate
         filters = [
-            "scale=1920:2688:force_original_aspect_ratio=decrease,pad=1920:2688:(ow-iw)/2:(oh-ih)/2",
-            "fps=20",
+            "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
+            "fps=25",
             "format=yuv420p"
         ]
 
@@ -38,7 +39,7 @@ class VideoProcessor:
             "-an",
             output_file
         ]
-
+        lg.info(f"Scaling and processing video: {input_file}") 
         try:
             subprocess.run(command, check=True)
         except subprocess.CalledProcessError as e:
@@ -54,7 +55,7 @@ class VideoProcessor:
                 self.process_video(input_path, output_path)
                 processed_videos.append(output_path)
 
-        lg.info("All videos processed successfully!")
+        lg.info("All videos scaled successfully!")
         self.video_effect(processed_videos)
 
     def video_effect(self, video_list):
@@ -66,14 +67,14 @@ class VideoProcessor:
                 step1_output = "temp_step1.mp4"
                 subprocess.run([
                     "ffmpeg", "-y", "-i", video,
-                    "-vf", "zoompan=z='if(lt(in_time,0), 2, 2-(40*(in_time-0.5)))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1,scale=1920:2688,setpts=N/20/TB",
-                    "-r", "20", "-pix_fmt", "yuv420p", "-crf", "28", "-preset", "ultrafast", step1_output
+                    "-vf", "zoompan=z='if(lt(in_time,0), 2, 2-(40*(in_time-0.5)))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1,scale=1080:1920,setpts=N/25/TB",
+                    "-r", "25", "-pix_fmt", "yuv420p", "-crf", "28", "-preset", "ultrafast", step1_output
                 ])
                 
                 # Step 2: Add white screen with crossfade at the start
                 step2_output = "temp_step2.mp4"
                 subprocess.run([
-                    "ffmpeg", "-y", "-f", "lavfi", "-t", "1.1", "-i", "color=c=white:s=1920x2688:rate=20",
+                    "ffmpeg", "-y", "-f", "lavfi", "-t", "1.1", "-i", "color=c=white:s=1080x1920:rate=25",
                     "-i", step1_output, "-filter_complex",
                     "[0:v]format=pix_fmts=yuv420p,settb=1/10240,setpts=PTS-STARTPTS[white];"
                     "[1:v]settb=1/10240,setpts=PTS-STARTPTS[video];"
@@ -85,13 +86,13 @@ class VideoProcessor:
                 step3_output = "temp_step3.mp4"
                 subprocess.run([
                     "ffmpeg", "-y", "-i", step2_output,
-                    "-vf", "zoompan=z='if(lt(in_time,4.8),1,1+((in_time-4.8)*10))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1,scale=1920:2688,setsar=1,setpts=N/20/TB",
-                    "-r", "20", "-pix_fmt", "yuv420p", "-crf", "28", "-preset", "ultrafast", step3_output
+                    "-vf", "zoompan=z='if(lt(in_time,4.8),1,1+((in_time-4.8)*10))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1,scale=1080:1920,setsar=1,setpts=N/25/TB",
+                    "-r", "25", "-pix_fmt", "yuv420p", "-crf", "28", "-preset", "ultrafast", step3_output
                 ])
                 
                 # Step 4: Apply white screen with crossfade at the end
                 subprocess.run([
-                    "ffmpeg", "-y", "-f", "lavfi", "-t", "1.1", "-i", "color=c=white:s=1920x2688:rate=20",
+                    "ffmpeg", "-y", "-f", "lavfi", "-t", "1.1", "-i", "color=c=white:s=1080x1920:rate=25",
                     "-i", step3_output, "-filter_complex",
                     "[0:v]format=pix_fmts=yuv420p,settb=1/10240,setpts=PTS-STARTPTS[white];"
                     "[1:v]settb=1/10240,setpts=PTS-STARTPTS[video];"
@@ -106,7 +107,7 @@ class VideoProcessor:
 
             elif video_name == "8.mp4":
                 subprocess.run([
-                    "ffmpeg", "-y", "-f", "lavfi", "-t", "1.1", "-i", "color=c=white:s=1920x2688:rate=20",
+                    "ffmpeg", "-y", "-f", "lavfi", "-t", "1.1", "-i", "color=c=white:s=1080x1920:rate=25",
                     "-i", video, "-filter_complex",
                     "[0:v]format=pix_fmts=yuv420p,settb=1/10240,setpts=PTS-STARTPTS[white];"
                     "[1:v]settb=1/10240,setpts=PTS-STARTPTS[video];"
@@ -116,13 +117,14 @@ class VideoProcessor:
 
             else:
                 subprocess.run([
-                    "ffmpeg", "-y", "-f", "lavfi", "-t", "1.1", "-i", "color=c=white:s=1920x2688:rate=20",
+                    "ffmpeg", "-y", "-f", "lavfi", "-t", "1.1", "-i", "color=c=white:s=1080x1920:rate=25",
                     "-i", video, "-filter_complex",
                     "[0:v]format=pix_fmts=yuv420p,settb=1/10240,setpts=PTS-STARTPTS[white];"
                     "[1:v]settb=1/10240,setpts=PTS-STARTPTS[video];"
                     "[video][white]xfade=transition=fade:duration=1:offset=4.5",
                     "-pix_fmt", "yuv420p", "-crf", "28", "-preset", "ultrafast", output_video_path
                 ])
+        lg.info("All transitions applied, starting concatenation process")
         self.concatenate_videos()
             
 
@@ -184,7 +186,7 @@ class VideoProcessor:
         
         # Run the second ffmpeg command (adding subtitles)
         subprocess.run(ffmpeg_subtitle_command, check=True)
-        
+        os.remove(temp_output)
         print(f"Final video saved as {final_output}")
 
 

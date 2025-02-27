@@ -6,13 +6,14 @@ PlayDepth: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding, WrapStyle
-Style: Style1,Roboto-Black,25,&HFFFFFF,&HFFFFFF,&H000000,&H000000,-1,20,0,0,100,100,0,0,3,5,0,5,20,-30,10,1,0
-Style: Style2,Roboto-Black,15,&HFFFFFF,&HFFFFFF,&H000000,&H000000,-1,0,0,0,100,100,0,0,3,5,0,5,20,-30,10,1,0
+Style: Style1,Roboto-Black,18,&HFFFFFF,&HFFFFFF,&H000000,&H000000,-1,20,0,0,100,100,0,0,3,5,0,5,20,-30,10,1,0
+Style: Style2,Roboto-Black,14,&HFFFFFF,&HFFFFFF,&H000000,&H000000,-1,0,0,0,100,100,0,0,3,5,0,5,20,-30,10,1,0
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,0:00:10.00,0:00:15.00,Style1,,0,0,0,,{\move(-170,230,180,230,0,500)}Mens' Joggers
-Dialogue: 0,0:00:15.50,0:00:20.50,Style2,,0,0,0,,{\move(390,200,60,200,0,1000)}DESIGN : Solid black{\an7}\N{\an7}with ribbed cuffs
-Dialogue: 0,0:00:21.80,0:00:26.00,Style2,,0,0,0,,{\move(390,200,60,200,0,1000)}Pockets - Side{\an7}\N{\an7}Pockets
-Dialogue: 0,0:00:27.50,0:00:32.00,Style2,,0,0,0,,{\move(390,200,60,200,0,640)}Material - \N{\an7\pos(370,220)}Polyster
+Dialogue: 0,0:00:10.00,0:00:16.00,Style1,,0,0,0,,{\move(-170,230,180,230,0,500)}Mens' Joggers
+Dialogue: 0,0:00:16.02,0:00:16.30,Style2,,0,0,0,,{\pos(30,100)}DESIGN : Solid black{\an7}\N{\an7}with ribbed cuffs
+Dialogue: 0,0:00:16.50,0:00:20.50,Style2,,0,0,0,,{\move(390,200,30,200,0,1000)}DESIGN : Solid black{\an7}\N{\an7}with ribbed cuffs
+Dialogue: 0,0:00:21.80,0:00:26.00,Style2,,0,0,0,,{\move(390,200,30,200,0,1000)}Pockets - Side{\an7}\N{\an7}Pockets
+Dialogue: 0,0:00:27.50,0:00:32.00,Style2,,0,0,0,,{\move(390,200,30,200,0,640)}Material - \N{\an7\pos(370,220)}Polyster
 Dialogue: 0,0:00:33.00,0:00:37.50,Style2,,0,0,0,,{\move(500,200,160,200,0,640)}Fit - Tapered Fit
