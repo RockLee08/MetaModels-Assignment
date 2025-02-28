@@ -20,9 +20,22 @@ class VideoProcessor:
         with open(self.config_file, "r") as f:
             self.video_configs = json.load(f)
 
+    def get_temp_filename(self, step, video_name):
+        return os.path.join(self.output_dir_transition, f"{video_name}_step{step}.mp4")
+
+
     def process_video(self, input_file, output_file, subtitle_text=None, animation=None):
-        """Applies resolution normalization and subtitles in a single step."""
-        # Base video filters: Normalize resolution and frame rate
+        """
+        Processes a video by scaling, setting fps same as to Expected_Output video fps
+
+        Expects: 
+        - input_file: path to the input video files
+        - output_file: path where processed video will be stored
+
+        Result:
+        Stores the processed video to dedicated output file path
+        """
+
         filters = [
             "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
             "fps=25",
@@ -46,6 +59,17 @@ class VideoProcessor:
             lg.error(f"Error processing {input_file}: {e}")
 
     def process_all_videos(self):
+        """
+        Processes all video files in the input directory by scaling them and applying effects. 
+
+        Uses input_dir and ouput_dir, input_dir where sample videos are stored and output_dir where all videos will be stored after scaling
+
+        Process:
+        - Iterates through all '.mp4' video files in the input directory
+        - Calls `process_video` to scale each video 
+        - Stores processed video path in a list 
+        - Calls `video effect` to apply transiitons and effects
+        """
         processed_videos = []
         for file in sorted(os.listdir(self.input_dir)):
             if file.endswith(".mp4"):
@@ -59,12 +83,18 @@ class VideoProcessor:
         self.video_effect(processed_videos)
 
     def video_effect(self, video_list):
+        """
+        Applies effects like zoom, crossfade, white screen transitions to videos
+        
+        Expects: 
+        - video_list: List of video file paths on which we have to apply transition
+        """
         for idx, video in enumerate(video_list):
             video_name = os.path.basename(video)
             output_video_path = os.path.join(self.output_dir_transition, video_name)
             if video_name == "1.mp4":
                 # Step 1: Add zoom effect at the start
-                step1_output = "temp_step1.mp4"
+                step1_output = self.get_temp_filename(1, video_name)
                 subprocess.run([
                     "ffmpeg", "-y", "-i", video,
                     "-vf", "zoompan=z='if(lt(in_time,0), 2, 2-(40*(in_time-0.5)))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1,scale=1080:1920,setpts=N/25/TB",
@@ -72,7 +102,7 @@ class VideoProcessor:
                 ])
                 
                 # Step 2: Add white screen with crossfade at the start
-                step2_output = "temp_step2.mp4"
+                step2_output = self.get_temp_filename(2, video_name)
                 subprocess.run([
                     "ffmpeg", "-y", "-f", "lavfi", "-t", "1.1", "-i", "color=c=white:s=1080x1920:rate=25",
                     "-i", step1_output, "-filter_complex",
@@ -83,7 +113,7 @@ class VideoProcessor:
                 ])
                 
                 # Step 3: Apply zoom effect at the end
-                step3_output = "temp_step3.mp4"
+                step3_output = self.get_temp_filename(3, video_name)
                 subprocess.run([
                     "ffmpeg", "-y", "-i", step2_output,
                     "-vf", "zoompan=z='if(lt(in_time,4.8),1,1+((in_time-4.8)*10))':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1,scale=1080:1920,setsar=1,setpts=N/25/TB",
@@ -129,9 +159,24 @@ class VideoProcessor:
             
 
     def concatenate_videos(self):
+        """
+        Concatenates multiple processed videos with crossfade transition and adds background audio. 
+
+        Expects:
+        - Uses internal paths
+
+        Process: 
+        - Combine all videos with fade effects
+        - Overlay background audio
+        - Saves an intermediate output video 
+        - Adds subtitle to the final video 
+        - Delete temporary files 
+
+        Finally gives us final_video.mp4 which has to be same as Expected_Output.mp4
+        """
         input_dir = os.path.join("output", "transition_video")
-        temp_output = "temp_video.mp4"  # Intermediate file
-        final_output = "final_video.mp4"  # Final video with subtitles
+        temp_output = os.path.join(self.output_dir, "temp_video.mp4")  # Intermediate file
+        final_output = os.path.join(self.output_dir, "final_video.mp4")  # Final video with subtitles
         
         video_files = [os.path.join(input_dir, f"{i}.mp4") for i in range(1, 9)]
         
@@ -194,3 +239,4 @@ class VideoProcessor:
 if __name__ == "__main__":
     processor = VideoProcessor()
     processor.process_all_videos()
+    # processor.concatenate_videos()
